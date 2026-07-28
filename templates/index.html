@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Daily Vocabulary Cards</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+  <div><h1>Daily Vocabulary Cards</h1><p>สร้างการ์ดคำศัพท์ภาษาอังกฤษ–ไทย วันละ 10 คำ</p></div>
+  <nav><button class="tab active" data-tab="create">สร้างการ์ด</button><button class="tab" data-tab="history">ประวัติการพิมพ์</button></nav>
+</header>
+<main>
+<section id="create" class="panel active">
+  <div class="controls">
+    <label>ระดับชั้น<select id="grade"><option value="3">ประถมศึกษาปีที่ 3</option><option value="4">ประถมศึกษาปีที่ 4</option><option value="5">ประถมศึกษาปีที่ 5</option><option value="6">ประถมศึกษาปีที่ 6</option></select></label>
+    <label>หมวดคำศัพท์<select id="category"><option value="all">ทุกหมวด</option>{% for key, label in categories.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></label>
+    <label>รูปแบบ<select id="theme"><option value="color">สีสัน</option><option value="ink">ประหยัดหมึก</option></select></label>
+    <label class="check"><input type="checkbox" id="noRepeat" checked> ไม่ใช้คำที่เคยพิมพ์แล้ว</label>
+  </div>
+  <div class="actions"><button id="randomBtn" class="primary">สุ่ม 10 คำ</button><button id="manualBtn">เลือกคำเอง</button><button id="printBtn">พิมพ์ A4</button></div>
+  <div id="notice"></div><div id="cards" class="cards color"></div>
+  <dialog id="picker"><div class="dialog-head"><h2>เลือกคำศัพท์ 10 คำ</h2><button id="closePicker">✕</button></div><input id="search" placeholder="ค้นหาคำศัพท์..."><div id="wordList" class="word-list"></div><div class="dialog-foot"><span>เลือกแล้ว <b id="selectedCount">0</b>/10</span><button id="useSelected" class="primary" disabled>ใช้คำที่เลือก</button></div></dialog>
+</section>
+<section id="history" class="panel"><div class="history-head"><div><h2>ประวัติการพิมพ์</h2><p>ข้อมูลเก็บในเครื่องเซิร์ฟเวอร์ภายในบ้าน</p></div><button id="clearHistory" class="danger">ล้างประวัติทั้งหมด</button></div><div id="historyList"></div></section>
+</main>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
