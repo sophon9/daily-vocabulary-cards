@@ -7,8 +7,10 @@ BASE = Path(__file__).resolve().parent
 app = Flask(__name__)
 VOCAB = json.loads((BASE / "vocabulary.json").read_text(encoding="utf-8"))
 
-# Build deterministic 400-word pools for grades 3-6 from the compact master list.
-MASTER_WORDS = VOCAB["words"]
+MASTER_WORDS = []
+for file_path in sorted((BASE / "data").glob("words_*.json")):
+    MASTER_WORDS.extend(json.loads(file_path.read_text(encoding="utf-8")))
+
 GRADE_POOLS = {}
 for index, grade in enumerate((3, 4, 5, 6)):
     shift = index * 20
@@ -52,18 +54,15 @@ def words():
     no_repeat = request.args.get("no_repeat", "false").lower() == "true"
     mode = request.args.get("mode", "random")
     limit = min(max(int(request.args.get("limit", 10)), 1), 100)
-
-    pool = GRADE_POOLS.get(grade, [])
+    pool = list(GRADE_POOLS.get(grade, []))
     if category != "all":
         pool = [w for w in pool if w["category"] == category]
-
     if no_repeat:
         with db() as conn:
             used = {r["word_en"] for r in conn.execute(
                 "SELECT word_en FROM printed_words WHERE grade=?", (int(grade),)
             ).fetchall()}
         pool = [w for w in pool if w["en"] not in used]
-
     if mode == "random":
         random.shuffle(pool)
         pool = pool[:limit]
@@ -94,13 +93,10 @@ def history():
         rows = conn.execute(
             "SELECT id, printed_at, grade, category, words_json FROM print_history ORDER BY id DESC LIMIT 200"
         ).fetchall()
-    result = []
-    for r in rows:
-        result.append({
-            "id": r["id"], "printed_at": r["printed_at"], "grade": r["grade"],
-            "category": r["category"], "words": json.loads(r["words_json"])
-        })
-    return jsonify(result)
+    return jsonify([{
+        "id": r["id"], "printed_at": r["printed_at"], "grade": r["grade"],
+        "category": r["category"], "words": json.loads(r["words_json"])
+    } for r in rows])
 
 @app.delete("/api/history")
 def clear_history():
@@ -113,9 +109,8 @@ def clear_history():
 def reuse_words():
     payload = request.get_json(force=True)
     grade = int(payload["grade"])
-    words = payload.get("words", [])
     with db() as conn:
-        for word in words:
+        for word in payload.get("words", []):
             conn.execute("DELETE FROM printed_words WHERE grade=? AND word_en=?", (grade, word))
     return jsonify({"ok": True})
 
