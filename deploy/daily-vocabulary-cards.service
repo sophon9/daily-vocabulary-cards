@@ -1,0 +1,19 @@
+[Unit]
+Description=Daily Vocabulary Cards
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sophon
+Group=sophon
+WorkingDirectory=/home/sophon/daily-vocabulary-cards
+Environment=PYTHONUNBUFFERED=1
+Environment=HOST=0.0.0.0
+Environment=PORT=5001
+ExecStart=/home/sophon/daily-vocabulary-cards/.venv/bin/python /home/sophon/daily-vocabulary-cards/app.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -4,27 +4,64 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Daily Vocabulary Cards</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20260730-3') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='custom.css', v='20260730-3') }}">
 </head>
 <body>
 <header>
   <div><h1>Daily Vocabulary Cards</h1><p>สร้างการ์ดคำศัพท์ภาษาอังกฤษ–ไทย วันละ 10 คำ</p></div>
-  <nav><button class="tab active" data-tab="create">สร้างการ์ด</button><button class="tab" data-tab="history">ประวัติการพิมพ์</button></nav>
+  <nav><button class="tab active" data-tab="create">สร้างการ์ด</button><button class="tab" data-tab="custom">เพิ่มคำศัพท์เอง</button><button class="tab" data-tab="profiles">ผู้เรียน</button><button class="tab" data-tab="history">ประวัติการพิมพ์</button></nav>
 </header>
 <main>
+<div class="child-toolbar"><label>กำลังสร้างการ์ดให้<select id="childSelect" aria-label="เลือกผู้เรียน"></select></label><button id="manageChildren">จัดการผู้เรียนและคำที่จำได้</button></div>
 <section id="create" class="panel active">
   <div class="controls">
     <label>ระดับชั้น<select id="grade"><option value="3">ประถมศึกษาปีที่ 3</option><option value="4">ประถมศึกษาปีที่ 4</option><option value="5">ประถมศึกษาปีที่ 5</option><option value="6">ประถมศึกษาปีที่ 6</option></select></label>
-    <label>หมวดคำศัพท์<select id="category"><option value="all">ทุกหมวด</option>{% for key, label in categories.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></label>
+    <label>หมวดคำศัพท์<select id="category"><option value="all">ทุกหมวด รวมคำที่เพิ่มเอง</option><option value="custom">คำที่ผู้ปกครองเพิ่ม</option>{% for key, label in categories.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></label>
     <label>รูปแบบ<select id="theme"><option value="color">สีสัน</option><option value="ink">ประหยัดหมึก</option></select></label>
     <label class="check"><input type="checkbox" id="noRepeat" checked> ไม่ใช้คำที่เคยพิมพ์แล้ว</label>
+    <label class="check remembered-check"><input type="checkbox" id="hideRemembered" checked> ซ่อนคำที่จำได้แล้ว</label>
   </div>
   <div class="actions"><button id="randomBtn" class="primary">สุ่ม 10 คำ</button><button id="manualBtn">เลือกคำเอง</button><button id="printBtn">พิมพ์ A4</button></div>
   <div id="notice"></div><div id="cards" class="cards color"></div>
   <dialog id="picker"><div class="dialog-head"><h2>เลือกคำศัพท์ 10 คำ</h2><button id="closePicker">✕</button></div><input id="search" placeholder="ค้นหาคำศัพท์..."><div id="wordList" class="word-list"></div><div class="dialog-foot"><span>เลือกแล้ว <b id="selectedCount">0</b>/10</span><button id="useSelected" class="primary" disabled>ใช้คำที่เลือก</button></div></dialog>
 </section>
+<section id="custom" class="panel">
+  <div class="custom-heading">
+    <div><h2>คำศัพท์จากผู้ปกครอง</h2><p>เพิ่มกี่คำก็ได้ ระบบจะบันทึกไว้และนำไปรวมกับคลังคำศัพท์เดิม</p></div>
+    <div class="custom-counter"><b id="customCount">0</b><span>คำพร้อมบันทึก</span></div>
+  </div>
+  <div class="input-methods">
+    <article class="method-card">
+      <div class="method-icon">⌨️</div><div><h3>พิมพ์คำศัพท์เอง</h3><p>เพิ่มหรือลดแถวได้ตามต้องการ คำอ่านเว้นว่างได้ ระบบจะช่วยสร้างให้</p></div>
+    </article>
+    <article class="method-card">
+      <div class="method-icon">📄</div><div><h3>นำเข้าไฟล์ CSV</h3><p>ใช้ไฟล์ตัวอย่างเพื่อให้คอลัมน์ถูกต้อง รองรับไฟล์ UTF-8</p><div class="csv-actions"><label for="csvFile" class="file-button">เลือกไฟล์ CSV</label><input id="csvFile" type="file" accept=".csv,text/csv"><a href="{{ url_for('static', filename='vocabulary-template.csv') }}" download>ดาวน์โหลดไฟล์ตัวอย่าง</a></div></div>
+    </article>
+  </div>
+  <div id="customNotice" class="custom-notice" role="status"></div>
+  <div class="custom-table-wrap">
+    <table class="custom-table">
+      <thead><tr><th class="row-number">#</th><th>คำศัพท์อังกฤษ <span>*</span></th><th>คำแปลไทย <span>*</span></th><th>คำอ่าน / IPA <small>ไม่บังคับ</small></th><th><span class="sr-only">ลบ</span></th></tr></thead>
+      <tbody id="customRows"></tbody>
+    </table>
+  </div>
+  <div class="custom-footer">
+    <div class="secondary-actions"><button id="addCustomRow">+ เพิ่มช่อง</button><button id="clearCustomRows">ล้างทั้งหมด</button></div>
+    <button id="saveCustomWords" class="primary" disabled>บันทึกคำศัพท์</button>
+  </div>
+  <div class="saved-library-heading"><div><h3>คลังคำศัพท์ที่เพิ่มเอง</h3><p>คำเหล่านี้จะแสดงร่วมกับคำศัพท์เดิมเมื่อกด “เลือกคำเอง”</p></div><span><b id="savedCustomCount">0</b> คำ</span></div>
+  <div id="customLibrary" class="custom-library"></div>
+</section>
+<section id="profiles" class="panel">
+  <div class="profiles-heading"><div><h2>ผู้เรียนและคำที่จำได้</h2><p>แต่ละคนมีรายการคำที่จำได้แยกกัน เปลี่ยนผู้เรียนจากแถบด้านบน</p></div><form id="addChildForm"><input id="newChildName" maxlength="80" placeholder="ชื่อหรือนickname" required><button class="primary" type="submit">+ เพิ่มผู้เรียน</button></form></div>
+  <div id="profileNotice" class="custom-notice" role="status"></div>
+  <div id="childrenList" class="children-list"></div>
+  <div class="remembered-heading"><div><h3>คำที่ <span id="rememberedChildName"></span> จำได้แล้ว</h3><p>คำเหล่านี้จะไม่ปรากฏในการสุ่มหรือเลือกการ์ดใหม่ สามารถนำกลับมาใช้ได้ทุกเมื่อ</p></div><span class="remembered-count"><b id="rememberedCount">0</b> คำ</span></div>
+  <div id="rememberedList" class="remembered-list"></div>
+</section>
 <section id="history" class="panel"><div class="history-head"><div><h2>ประวัติการพิมพ์</h2><p>ข้อมูลเก็บในเครื่องเซิร์ฟเวอร์ภายในบ้าน</p></div><button id="clearHistory" class="danger">ล้างประวัติทั้งหมด</button></div><div id="historyList"></div></section>
 </main>
-<script src="{{ url_for('static', filename='app.js') }}"></script>
+<script src="{{ url_for('static', filename='app.js', v='20260730-3') }}"></script>
 </body>
 </html>
