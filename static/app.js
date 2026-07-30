@@ -331,6 +331,42 @@ function wordsFromCSV(text) {
   })).filter(word => word.en || word.th || word.pronunciation);
 }
 
+function wordsFromPastedText(text) {
+  const words = [];
+  const invalidLines = [];
+  text.replace(/^\uFEFF/, "").split(/\r?\n/).forEach((rawLine, index) => {
+    const line = rawLine.trim();
+    if (!line) return;
+    const comma = line.indexOf(",");
+    const en = comma >= 0 ? line.slice(0, comma).trim() : "";
+    const th = comma >= 0 ? line.slice(comma + 1).trim() : "";
+    if (!en || !th) invalidLines.push(index + 1);
+    else words.push({en, th, pronunciation: ""});
+  });
+  if (invalidLines.length) {
+    throw new Error(`รูปแบบไม่ถูกต้องที่บรรทัด ${invalidLines.join(", ")} กรุณาใช้ คำศัพท์, คำแปล`);
+  }
+  if (!words.length) throw new Error("กรุณาวางคำศัพท์อย่างน้อย 1 บรรทัด");
+  return words;
+}
+
+$("#importPastedWords").onclick = () => {
+  try {
+    const imported = wordsFromPastedText($("#pastedWords").value);
+    const existing = customEntries()
+      .filter(word => word.en || word.th || word.pronunciation)
+      .map(({en, th, pronunciation}) => ({en, th, pronunciation}));
+    if (existing.length + imported.length > 500) {
+      throw new Error("บันทึกได้สูงสุดครั้งละ 500 คำ");
+    }
+    setCustomRows([...existing, ...imported]);
+    $("#pastedWords").value = "";
+    customMessage(`เพิ่ม ${imported.length} คำจากข้อความลงตารางแล้ว ตรวจสอบก่อนบันทึก`, "success");
+  } catch (error) {
+    customMessage(error.message, "error");
+  }
+};
+
 $("#csvFile").onchange = async event => {
   const file = event.target.files[0];
   if (!file) return;
